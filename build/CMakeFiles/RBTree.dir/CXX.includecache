@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/fxh/Exercise/RBTree/RBTree.cpp
+iostream
+-
+vector
+-
+RBTree.h
+/home/fxh/Exercise/RBTree/RBTree.h
+
+/home/fxh/Exercise/RBTree/RBTree.h
+iostream
+-
+cassert
+-
+memory
+-
+RBTreeNode.h
+/home/fxh/Exercise/RBTree/RBTreeNode.h
+
+/home/fxh/Exercise/RBTree/RBTreeNode.h
+

@@ -2,33 +2,6 @@
 #include <vector>
 #include "RBTree.h"
 int depth = 0;
-template <typename KEY, typename VAL>
-void RBTreeNode<KEY, VAL>::print_middle()
-{
-    ++depth;
-    if (left_)
-    {
-
-        left_->print_middle();
-    }
-    else
-    {
-        std::cout << "depth:" << depth << " nullptr\n";
-    }
-    --depth;
-    std::cout << "depth:" << depth << " key:" << key_ << " val:" << val_ << " color:" << (color_ == Color::black ? "black\n" : "red\n");
-    ++depth;
-    if (right_)
-    {
-
-        right_->print_middle();
-    }
-    else
-    {
-        std::cout << "depth:" << depth << " nullptr\n";
-    }
-    --depth;
-}
 void cmd_parse(std::string cmd, std::vector<std::string> &cmd_parsed)
 {
     cmd_parsed.clear();

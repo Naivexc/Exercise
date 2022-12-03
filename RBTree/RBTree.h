@@ -1,96 +1,15 @@
+#ifndef RB_TREE_H
+#define RB_TREE_H
 #include <iostream>
 #include <cassert>
-enum class Color
-{
-    red,
-    black
-};
-template <typename KEY, typename VAL>
-class RBTreeNode
-{
-public:
-    KEY key_;
-    VAL val_;
-    Color color_;
-    RBTreeNode *parent_;
-    RBTreeNode *left_;
-    RBTreeNode *right_;
-    RBTreeNode(KEY key, VAL val, Color color);
-    RBTreeNode *get_uncle();
-    RBTreeNode *get_brother();
-    RBTreeNode *&get_index_in_parent(); //返回父节点对其的索引指针;为根节点时返回nullptr
-    void print_middle();
-    bool check_key();
-    std::pair<bool, int> check_color();
-};
-template <typename KEY, typename VAL>
-bool RBTreeNode<KEY, VAL>::check_key()
-{
-    if (left_ && !left_->check_key())
-        return false;
-    if (right_ && !right_->check_key())
-        return false;
-    if (left_ && left_->key_ >= key_ || right_ && right_->key_ <= key_)
-        return false;
-    return true;
-}
-template <typename KEY, typename VAL>
-std::pair<bool, int> RBTreeNode<KEY, VAL>::check_color()
-{
-    if (color_ == Color::red)
-    {
-        if (left_ && left_->color_ == Color::red || right_ && right_->color_ == Color::red)
-            return std::make_pair(false, 0);
-    }
-    std::pair<bool, int> left_pair;
-    std::pair<bool, int> right_pair;
-    if (left_)
-        left_pair = left_->check_color();
-    else
-        left_pair = std::make_pair(true, 1);
-    if (!left_pair.first)
-        return std::make_pair(false, 0);
-    if (right_)
-        right_pair = right_->check_color();
-    else
-        right_pair = std::make_pair(true, 1);
-    if (!right_pair.first)
-        return std::make_pair(false, 0);
-    if (left_pair.second != right_pair.second)
-        return std::make_pair(false, 0);
-    if (color_ == Color::red)
-        return std::make_pair(true, left_pair.second);
-    else
-        return std::make_pair(true, left_pair.second + 1);
-}
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL> *RBTreeNode<KEY, VAL>::get_brother()
-{
-    if (!parent_)
-    {
-        std::cout << "error: root node has no brother node\n";
-        return nullptr;
-    }
-    if (parent_->left_ == this)
-        return parent_->right_;
-    else
-        return parent_->left_;
-}
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL> *&RBTreeNode<KEY, VAL>::get_index_in_parent()
-{
-    if (!parent_)
-        assert(false);
-    if (parent_->left_ == this)
-        return parent_->left_;
-    else
-        return parent_->right_;
-}
+#include <memory>
+#include "RBTreeNode.h"
+extern int depth;
 template <typename KEY, typename VAL>
 class RBTree
 {
 public:
-    RBTreeNode<KEY, VAL> *root;
+    std::unique_ptr<RBTreeNode<KEY, VAL>> root;
     RBTree();
     RBTreeNode<KEY, VAL> *find(KEY key);
     RBTreeNode<KEY, VAL> *insert(KEY key, VAL val);
@@ -103,33 +22,7 @@ public:
     {
         return !ptr || ptr->color_ == Color::black;
     }
-    void print()
-    {
-    }
-    bool check();
 };
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL>::RBTreeNode(KEY key, VAL val, Color color)
-    : key_(key), val_(val), color_(color), parent_(nullptr), left_(nullptr), right_(nullptr)
-{
-}
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL> *RBTreeNode<KEY, VAL>::get_uncle()
-{
-    if (parent_ == nullptr)
-        assert(false);
-    auto gparent = parent_->parent_;
-    if (gparent == nullptr)
-        assert(false);
-    if (gparent->left_ == parent_)
-    {
-        return gparent->right_;
-    }
-    else
-    {
-        return gparent->left_;
-    }
-}
 template <typename KEY, typename VAL>
 RBTree<KEY, VAL>::RBTree() : root(nullptr)
 {
@@ -137,13 +30,13 @@ RBTree<KEY, VAL>::RBTree() : root(nullptr)
 template <typename KEY, typename VAL>
 RBTreeNode<KEY, VAL> *RBTree<KEY, VAL>::find(KEY key)
 {
-    auto ptr = root;
+    auto ptr = root.get();
     while (ptr && ptr->key_ != key)
     {
         if (key < ptr->key_)
-            ptr = ptr->left_;
+            ptr = ptr->left_.get();
         else
-            ptr = ptr->right_;
+            ptr = ptr->right_.get();
     }
     return ptr;
 }
@@ -152,52 +45,30 @@ RBTreeNode<KEY, VAL> *RBTree<KEY, VAL>::left_rotate(RBTreeNode<KEY, VAL> *ptr)
 {
     if (ptr->right_ == nullptr)
         assert(false);
-    auto right = ptr->right_;
-    auto parent = ptr->parent_;
-    ptr->right_ = right->left_;
-    if (right->left_ != nullptr)
-        right->left_->parent_ = ptr;
-    ptr->parent_ = right;
-    right->left_ = ptr;
-    right->parent_ = parent;
-    if (parent != nullptr)
-    {
-        if (parent->left_ == ptr)
-            parent->left_ = right;
-        else
-            parent->right_ = right;
-    }
-    else
-    {
-        root = right;
-    }
-    return right;
+    auto right_ptr = ptr->right_.get();
+    ptr->get_index_in_parent().reset(ptr->right_.release());
+    ptr->right_->parent_ = ptr->parent_;
+    ptr->parent_ = right_ptr;
+    if (right_ptr->left_)
+        ptr->right_.reset(right_ptr->left_.get());
+    ptr->right_->parent_ = ptr;
+    right_ptr->left_.reset(ptr);
+    return right_ptr;
 }
 template <typename KEY, typename VAL>
 RBTreeNode<KEY, VAL> *RBTree<KEY, VAL>::right_rotate(RBTreeNode<KEY, VAL> *ptr)
 {
     if (ptr->left_ == nullptr)
         assert(false);
-    auto left = ptr->left_;
-    auto parent = ptr->parent_;
-    ptr->left_ = left->right_;
-    if (left->right_ != nullptr)
-        left->right_->parent_ = ptr;
-    ptr->parent_ = left;
-    left->right_ = ptr;
-    left->parent_ = parent;
-    if (parent != nullptr)
-    {
-        if (parent->right_ == ptr)
-            parent->right_ = left;
-        else
-            parent->left_ = left;
-    }
-    else
-    {
-        root = left;
-    }
-    return left;
+    auto left_ptr = ptr->left_.get();
+    ptr->get_index_in_parent().reset(ptr->left_.release());
+    ptr->left_->parent_ = ptr->parent_;
+    ptr->parent_ = left_ptr;
+    if (left_ptr->right_)
+        ptr->left_.reset(left_ptr->right_.get());
+    ptr->left_->parent_ = ptr;
+    left_ptr->right_.reset(ptr);
+    return left_ptr;
 }
 template <typename KEY, typename VAL>
 void RBTree<KEY, VAL>::adjust_for_insert(RBTreeNode<KEY, VAL> *ptr)
@@ -218,7 +89,7 @@ void RBTree<KEY, VAL>::adjust_for_insert(RBTreeNode<KEY, VAL> *ptr)
     }
     auto gparent = parent->parent_;
     auto uncle = ptr->get_uncle();
-    if (parent == gparent->left_)
+    if (parent == gparent->left_.get())
     {
         if (uncle && uncle->color_ == Color::red)
         {
@@ -230,7 +101,7 @@ void RBTree<KEY, VAL>::adjust_for_insert(RBTreeNode<KEY, VAL> *ptr)
         }
         else
         {
-            if (parent->left_ == ptr)
+            if (parent->left_.get() == ptr)
             {
                 right_rotate(gparent);
                 parent->right_->color_ = Color::red;
@@ -259,7 +130,7 @@ void RBTree<KEY, VAL>::adjust_for_insert(RBTreeNode<KEY, VAL> *ptr)
         }
         else
         {
-            if (parent->right_ == ptr)
+            if (parent->right_.get() == ptr)
             {
                 left_rotate(gparent);
                 parent->left_->color_ = Color::red;
@@ -280,7 +151,7 @@ void RBTree<KEY, VAL>::adjust_for_insert(RBTreeNode<KEY, VAL> *ptr)
 template <typename KEY, typename VAL>
 RBTreeNode<KEY, VAL> *RBTree<KEY, VAL>::insert(KEY key, VAL val)
 {
-    auto ptr = root;
+    auto ptr = root.get();
     RBTreeNode<KEY, VAL> *ret = nullptr;
     RBTreeNode<KEY, VAL> *parent = nullptr;
     while (ptr)
@@ -288,52 +159,54 @@ RBTreeNode<KEY, VAL> *RBTree<KEY, VAL>::insert(KEY key, VAL val)
         if (key < ptr->key_)
         {
             parent = ptr;
-            ptr = ptr->left_;
+            ptr = ptr->left_.get();
         }
         else
         {
             parent = ptr;
-            ptr = ptr->right_;
+            ptr = ptr->right_.get();
         }
     }
     if (!parent)
     {
         //无节点
-        root = new RBTreeNode(key, val, Color::black);
-        return root;
+        root = std::make_unique<RBTreeNode<KEY, VAL>>(key, val, Color::black);
+        return root.get();
     }
     ret = new RBTreeNode(key, val, Color::red);
     if (key < parent->key_)
     {
-        parent->left_ = ret;
+        parent->left_.reset(ret);
         ret->parent_ = parent;
         adjust_for_insert(ret);
     }
     else if (key > parent->key_)
     {
-        parent->right_ = ret;
+        parent->right_.reset(ret);
         ret->parent_ = parent;
         adjust_for_insert(ret);
     }
     else
     {
         std::cout << "insert same element;ignore\n";
+        delete ret;
+        ret = nullptr;
     }
     return ret;
 }
 template <typename KEY, typename VAL>
 void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
 {
-    if (ptr == root)
+    if (ptr == root.get())
         return;
     RBTreeNode<KEY, VAL> *parent = ptr->parent_;
     RBTreeNode<KEY, VAL> *brother = ptr->get_brother();
-    if (parent->left_ == ptr)
+    if (parent->left_.get() == ptr)
     {
         if (is_black(brother))
         {
             //由平衡条件,此时兄弟节点不可能为nullptr
-            if (is_black(brother->left_) && is_black(brother->right_))
+            if (is_black(brother->left_.get()) && is_black(brother->right_.get()))
             {
                 brother->color_ = Color::red;
                 if (parent->color_ == Color::red)
@@ -347,7 +220,7 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
                     return;
                 }
             }
-            else if (!is_black(brother->left_))
+            else if (!is_black(brother->left_.get()))
             {
                 right_rotate(brother);
                 left_rotate(parent);
@@ -380,7 +253,7 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
         }
         else if (brother->color_ == Color::red)
         {
-            if (parent->left_ == ptr)
+            if (parent->left_.get() == ptr)
             {
                 left_rotate(ptr->parent_);
                 parent->color_ = Color::red;
@@ -396,12 +269,12 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
             }
         }
     }
-    if (parent->right_ == ptr)
+    if (parent->right_.get() == ptr)
     {
         if (is_black(brother))
         {
             //由平衡条件,此时兄弟节点不可能为nullptr
-            if (is_black(brother->right_) && is_black(brother->left_))
+            if (is_black(brother->right_.get()) && is_black(brother->left_.get()))
             {
                 brother->color_ = Color::red;
                 if (parent->color_ == Color::red)
@@ -415,7 +288,7 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
                     return;
                 }
             }
-            else if (!is_black(brother->right_))
+            else if (!is_black(brother->right_.get()))
             {
                 left_rotate(brother);
                 right_rotate(parent);
@@ -448,7 +321,7 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
         }
         else if (brother->color_ == Color::red)
         {
-            if (parent->right_ == ptr)
+            if (parent->right_.get() == ptr)
             {
                 right_rotate(ptr->parent_);
                 parent->color_ = Color::red;
@@ -468,13 +341,13 @@ void RBTree<KEY, VAL>::adjust_double_black_node(RBTreeNode<KEY, VAL> *ptr)
 template <typename KEY, typename VAL>
 void RBTree<KEY, VAL>::erase(KEY key)
 {
-    RBTreeNode<KEY, VAL> *ptr = root;
+    RBTreeNode<KEY, VAL> *ptr = root.get();
     while (ptr && ptr->key_ != key)
     {
         if (ptr->key_ < key)
-            ptr = ptr->right_;
+            ptr = ptr->right_.get();
         else
-            ptr = ptr->left_;
+            ptr = ptr->left_.get();
     }
     if (!ptr)
     {
@@ -483,9 +356,9 @@ void RBTree<KEY, VAL>::erase(KEY key)
     }
     if (ptr->left_ && ptr->right_)
     {
-        RBTreeNode<KEY, VAL> *qtr = ptr->right_;
+        RBTreeNode<KEY, VAL> *qtr = ptr->right_.get();
         while (qtr->left_ != nullptr)
-            qtr = qtr->left_;
+            qtr = qtr->left_.get();
         std::swap(ptr->key_, qtr->key_);
         std::swap(ptr->val_, qtr->val_);
         ptr = qtr;
@@ -495,14 +368,18 @@ void RBTree<KEY, VAL>::erase(KEY key)
         if (ptr->color_ == Color::red)
         {
             if (ptr->parent_)
-                ptr->get_index_in_parent() = nullptr;
+                ptr->get_index_in_parent().release();
+            else
+                root.release();
             return;
         }
         else
         {
             adjust_double_black_node(ptr);
             if (ptr->parent_)
-                ptr->get_index_in_parent() = nullptr;
+                ptr->get_index_in_parent().release();
+            else
+                root.release();
             return;
         }
     }
@@ -511,14 +388,18 @@ void RBTree<KEY, VAL>::erase(KEY key)
         if (ptr->color_ == Color::red)
         {
             if (ptr->parent_)
-                ptr->get_index_in_parent() = ptr->left_;
+                ptr->get_index_in_parent().reset(ptr->left_.release());
+            else
+                root.reset(ptr->left_.release());
             ptr->left_->parent_ = ptr->parent_;
             return;
         }
         else if (ptr->color_ == Color::black)
         {
             if (ptr->parent_)
-                ptr->get_index_in_parent() = ptr->left_;
+                ptr->get_index_in_parent().reset(ptr->left_.release());
+            else
+                root.reset(ptr->left_.release());
             ptr->left_->parent_ = ptr->parent_;
             if (ptr->left_->color_ == Color::red)
             {
@@ -527,7 +408,7 @@ void RBTree<KEY, VAL>::erase(KEY key)
             }
             else
             {
-                adjust_double_black_node(ptr->left_);
+                adjust_double_black_node(ptr->left_.get());
                 return;
             }
         }
@@ -539,14 +420,18 @@ void RBTree<KEY, VAL>::erase(KEY key)
         if (ptr->color_ == Color::red)
         {
             if (ptr->parent_)
-                ptr->get_index_in_parent() = ptr->right_;
+                ptr->get_index_in_parent().reset(ptr->right_.release());
+            else
+                root.reset(ptr->right_.release());
             ptr->right_->parent_ = ptr->parent_;
             return;
         }
         else if (ptr->color_ == Color::black)
         {
             if (ptr->parent_)
-                ptr->get_index_in_parent() = ptr->right_;
+                ptr->get_index_in_parent().reset(ptr->right_.release());
+            else
+                root.reset(ptr->right_.release());
             ptr->right_->parent_ = ptr->parent_;
             if (ptr->right_->color_ == Color::red)
             {
@@ -555,7 +440,7 @@ void RBTree<KEY, VAL>::erase(KEY key)
             }
             else
             {
-                adjust_double_black_node(ptr->right_);
+                adjust_double_black_node(ptr->right_.get());
                 return;
             }
         }
@@ -565,3 +450,4 @@ void RBTree<KEY, VAL>::erase(KEY key)
     else
         assert(false);
 }
+#endif
