@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named AVLTree
+
+# Build rule for target.
+AVLTree: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 AVLTree
+.PHONY : AVLTree
+
+# fast build rule for target.
+AVLTree/fast:
+	$(MAKE) -f CMakeFiles/AVLTree.dir/build.make CMakeFiles/AVLTree.dir/build
+.PHONY : AVLTree/fast
+
+#=============================================================================
 # Target rules for targets named RBTree
 
 # Build rule for target.
@@ -122,6 +135,33 @@ RBTree: cmake_check_build_system
 RBTree/fast:
 	$(MAKE) -f CMakeFiles/RBTree.dir/build.make CMakeFiles/RBTree.dir/build
 .PHONY : RBTree/fast
+
+AVLTree/AVLTree.o: AVLTree/AVLTree.cpp.o
+
+.PHONY : AVLTree/AVLTree.o
+
+# target to build an object file
+AVLTree/AVLTree.cpp.o:
+	$(MAKE) -f CMakeFiles/AVLTree.dir/build.make CMakeFiles/AVLTree.dir/AVLTree/AVLTree.cpp.o
+.PHONY : AVLTree/AVLTree.cpp.o
+
+AVLTree/AVLTree.i: AVLTree/AVLTree.cpp.i
+
+.PHONY : AVLTree/AVLTree.i
+
+# target to preprocess a source file
+AVLTree/AVLTree.cpp.i:
+	$(MAKE) -f CMakeFiles/AVLTree.dir/build.make CMakeFiles/AVLTree.dir/AVLTree/AVLTree.cpp.i
+.PHONY : AVLTree/AVLTree.cpp.i
+
+AVLTree/AVLTree.s: AVLTree/AVLTree.cpp.s
+
+.PHONY : AVLTree/AVLTree.s
+
+# target to generate assembly for a file
+AVLTree/AVLTree.cpp.s:
+	$(MAKE) -f CMakeFiles/AVLTree.dir/build.make CMakeFiles/AVLTree.dir/AVLTree/AVLTree.cpp.s
+.PHONY : AVLTree/AVLTree.cpp.s
 
 RBTree/RBTree.o: RBTree/RBTree.cpp.o
 
@@ -158,7 +198,11 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... AVLTree"
 	@echo "... RBTree"
+	@echo "... AVLTree/AVLTree.o"
+	@echo "... AVLTree/AVLTree.i"
+	@echo "... AVLTree/AVLTree.s"
 	@echo "... RBTree/RBTree.o"
 	@echo "... RBTree/RBTree.i"
 	@echo "... RBTree/RBTree.s"

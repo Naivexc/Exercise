@@ -7,3 +7,6 @@ set(CMAKE_C_STANDARD 11)
 add_executable(RBTree
 		RBTree/RBTree.cpp
 )
+add_executable(AVLTree
+		AVLTree/AVLTree.cpp
+)

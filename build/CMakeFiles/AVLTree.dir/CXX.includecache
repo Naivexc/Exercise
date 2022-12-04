@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/fxh/Exercise/AVLTree/AVLTree.cpp
+iostream
+-
+vector
+-
+set
+-
+AVLTree.h
+/home/fxh/Exercise/AVLTree/AVLTree.h
+
+/home/fxh/Exercise/AVLTree/AVLTree.h
+AVLTreeNode.h
+/home/fxh/Exercise/AVLTree/AVLTreeNode.h
+cmath
+-
+memory
+-
+iostream
+-
+unordered_map
+-
+unordered_set
+-
+queue
+-
+cassert
+-
+algorithm
+-
+
+/home/fxh/Exercise/AVLTree/AVLTreeNode.h
+memory
+-
+
