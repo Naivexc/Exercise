@@ -1,5 +1,8 @@
 #ifndef RB_TREE_NODE_H
 #define RB_TREE_NODE_H
+#include <memory>
+#include <iostream>
+#include <cassert>
 extern int depth;
 enum class Color
 {
@@ -7,38 +10,72 @@ enum class Color
     black
 };
 
-template <typename KEY, typename VAL>
+template <typename VAL>
 class RBTreeNode
 {
 public:
-    KEY key_;
     VAL val_;
     Color color_;
     RBTreeNode *parent_;
-    std::unique_ptr<RBTreeNode<KEY, VAL>> left_;
-    std::unique_ptr<RBTreeNode<KEY, VAL>> right_;
-    RBTreeNode(KEY key, VAL val, Color color);
+    std::unique_ptr<RBTreeNode<VAL>> left_;
+    std::unique_ptr<RBTreeNode<VAL>> right_;
+    RBTreeNode(VAL val, Color color);
     RBTreeNode *get_uncle();
     RBTreeNode *get_brother();
-    std::unique_ptr<RBTreeNode<KEY, VAL>> &get_index_in_parent(); //返回父节点对其的索引指针;为根节点时返回nullptr
+    std::unique_ptr<RBTreeNode<VAL>> &get_index_in_parent(); //返回父节点对其的索引指针;为根节点时返回nullptr
     void print_middle();
     bool check_key();
+    bool check_parent();
     std::pair<bool, int> check_color();
 };
-template <typename KEY, typename VAL>
-bool RBTreeNode<KEY, VAL>::check_key()
+template <typename VAL>
+std::ostream &operator<<(std::ostream &out, RBTreeNode<VAL> *const &ptr)
+{
+    if (ptr == nullptr)
+        std::cout << "val:null, "
+                  << "color:black\n";
+    else
+        std::cout << "val:" << ptr->val_ << ", "
+                  << "color:" << (ptr->color_ == Color::red ? "red\n" : "black\n");
+    return out;
+}
+template <typename VAL>
+bool RBTreeNode<VAL>::check_key()
 {
     if (left_ && !left_->check_key())
         return false;
     if (right_ && !right_->check_key())
         return false;
-    if (left_ && left_->key_ >= key_ || right_ && right_->key_ <= key_)
+    if (left_ && left_->val_ >= val_ || right_ && right_->val_ <= val_)
         return false;
     return true;
 }
-template <typename KEY, typename VAL>
-std::pair<bool, int> RBTreeNode<KEY, VAL>::check_color()
+template <typename VAL>
+bool RBTreeNode<VAL>::check_parent()
 {
+    if (left_ && !left_->check_parent())
+        return false;
+    if (right_ && !right_->check_parent())
+        return false;
+    if (left_ && left_->parent_ != this)
+    {
+        std::cout << left_.get() << '\n';
+        std::cout << left_->parent_ << '\n';
+        return false;
+    }
+    if (right_ && right_->parent_ != this)
+    {
+        std::cout << right_.get() << '\n';
+        std::cout << right_->parent_ << '\n';
+        return false;
+    }
+    return true;
+}
+template <typename VAL>
+std::pair<bool, int> RBTreeNode<VAL>::check_color()
+{
+    if (!parent_ && color_ == Color::red)
+        return std::make_pair(false, 0);
     if (color_ == Color::red)
     {
         if (left_ && left_->color_ == Color::red || right_ && right_->color_ == Color::red)
@@ -65,8 +102,8 @@ std::pair<bool, int> RBTreeNode<KEY, VAL>::check_color()
     else
         return std::make_pair(true, left_pair.second + 1);
 }
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL> *RBTreeNode<KEY, VAL>::get_brother()
+template <typename VAL>
+RBTreeNode<VAL> *RBTreeNode<VAL>::get_brother()
 {
     if (!parent_)
     {
@@ -78,8 +115,8 @@ RBTreeNode<KEY, VAL> *RBTreeNode<KEY, VAL>::get_brother()
     else
         return parent_->left_.get();
 }
-template <typename KEY, typename VAL>
-std::unique_ptr<RBTreeNode<KEY, VAL>> &RBTreeNode<KEY, VAL>::get_index_in_parent()
+template <typename VAL>
+std::unique_ptr<RBTreeNode<VAL>> &RBTreeNode<VAL>::get_index_in_parent()
 {
     if (!parent_)
         assert(false);
@@ -87,8 +124,8 @@ std::unique_ptr<RBTreeNode<KEY, VAL>> &RBTreeNode<KEY, VAL>::get_index_in_parent
         return parent_->left_;
     return parent_->right_;
 }
-template <typename KEY, typename VAL>
-void RBTreeNode<KEY, VAL>::print_middle()
+template <typename VAL>
+void RBTreeNode<VAL>::print_middle()
 {
     ++depth;
     if (left_)
@@ -101,7 +138,7 @@ void RBTreeNode<KEY, VAL>::print_middle()
         std::cout << "depth:" << depth << " nullptr\n";
     }
     --depth;
-    std::cout << "depth:" << depth << " key:" << key_ << " val:" << val_ << " color:" << (color_ == Color::black ? "black\n" : "red\n");
+    std::cout << "depth:" << depth << " val:" << val_ << " color:" << (color_ == Color::black ? "black\n" : "red\n");
     ++depth;
     if (right_)
     {
@@ -115,13 +152,13 @@ void RBTreeNode<KEY, VAL>::print_middle()
     --depth;
 }
 
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL>::RBTreeNode(KEY key, VAL val, Color color)
-    : key_(key), val_(val), color_(color), parent_(nullptr), left_(nullptr), right_(nullptr)
+template <typename VAL>
+RBTreeNode<VAL>::RBTreeNode(VAL val, Color color)
+    : val_(val), color_(color), parent_(nullptr), left_(nullptr), right_(nullptr)
 {
 }
-template <typename KEY, typename VAL>
-RBTreeNode<KEY, VAL> *RBTreeNode<KEY, VAL>::get_uncle()
+template <typename VAL>
+RBTreeNode<VAL> *RBTreeNode<VAL>::get_uncle()
 {
     if (parent_ == nullptr)
         assert(false);

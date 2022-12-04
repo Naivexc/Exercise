@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <set>
 #include "RBTree.h"
 int depth = 0;
 void cmd_parse(std::string cmd, std::vector<std::string> &cmd_parsed)
@@ -31,21 +32,92 @@ int string_to_int(std::string str)
     }
     return ans;
 }
+struct A
+{
+    int x_;
+    A(int x) : x_(x){};
+    ~A() { std::cout << "Destructor Called:" << x_ << '\n'; }
+};
+bool operator<(const A &a, const A &b) { return a.x_ < b.x_; }
+bool operator>(const A &a, const A &b) { return a.x_ > b.x_; }
+bool operator==(const A &a, const A &b) { return a.x_ == b.x_; }
+bool operator<=(const A &a, const A &b) { return a.x_ <= b.x_; }
+bool operator>=(const A &a, const A &b) { return a.x_ >= b.x_; }
+bool operator!=(const A &a, const A &b) { return a.x_ != b.x_; }
+std::ostream &operator<<(std::ostream &out, const A &a)
+{
+    out << a.x_;
+    return out;
+}
+void Test()
+{
+    int N = 0, M = 0, W = 0;
+    std::cout << "please enter num of nodes:N\n";
+    std::cin >> N;
+    std::cout << "please enter range of val:M, M>=N\n";
+    std::cin >> M;
+    std::cout << "please enter num of nodes after delete:W,W<=N\n";
+    std::cin >> W;
+    RBTree<A> tree;
+    std::set<A> test;
+    int cur = 0;
+    for (int i = 0; i < N; ++i)
+    {
+        while (true)
+        {
+            cur = rand() % M;
+            if (test.find(cur) == test.end())
+                break;
+        }
+        std::cout << "insert " << cur << '\n';
+        tree.insert(A(cur));
+        test.insert(A(cur));
+        if (tree.check())
+            std::cout << "not failed\n";
+    }
+    // tree.print();
+    for (int i = 0; i < N - W; ++i)
+    {
+        cur = rand() % test.size();
+        auto iter = test.begin();
+        while (cur)
+        {
+            ++iter;
+            --cur;
+        }
+        std::cout << "delete " << iter->x_ << '\n';
+        test.erase(iter);
+        tree.erase(*iter);
+        if (tree.check())
+            std::cout << "not failed\n";
+        // tree.print();
+    }
+    tree.print();
+}
 int main()
 {
-    RBTree<int, int> tree;
+    Test();
+    return 0;
+    RBTree<int> tree;
     std::string cmd;
     std::vector<std::string> parsed_cmd;
-    std::vector<int> init_vec{9, 4, 14, 1, 6, 12, 18, 0, 2, 5, 7, 11, 13, 16, 19, 3, 8, 10, 15, 17};
+    std::vector<int> init_vec{};
+    std::set<int> test;
     for (int i = 0; i < init_vec.size(); ++i)
-        tree.insert(init_vec[i], init_vec[i]);
+    {
+        tree.insert(init_vec[i]);
+        test.insert(init_vec[i]);
+    }
     while (std::getline(std::cin, cmd))
     {
         cmd_parse(cmd, parsed_cmd);
         if (parsed_cmd[0] == "insert")
         {
             for (int i = 1; i < parsed_cmd.size(); ++i)
-                tree.insert(string_to_int(parsed_cmd[i]), string_to_int(parsed_cmd[i]));
+            {
+                tree.insert(string_to_int(parsed_cmd[i]));
+                test.insert(string_to_int(parsed_cmd[i]));
+            }
         }
         else if (parsed_cmd[0] == "find")
         {
@@ -58,7 +130,10 @@ int main()
         else if (parsed_cmd[0] == "delete")
         {
             for (int i = 1; i < parsed_cmd.size(); ++i)
+            {
                 tree.erase(string_to_int(parsed_cmd[i]));
+                test.erase(string_to_int(parsed_cmd[i]));
+            }
         }
         else if (parsed_cmd[0] == "quit")
         {
@@ -68,19 +143,19 @@ int main()
         {
             std::cout << "wrong cmd\n";
         }
-        if (tree.root)
+        if (tree.root_)
         {
-            if (!tree.root->check_key())
+            tree.print();
+            if (!tree.root_->check_key())
             {
                 std::cout << "error: key wrong\n";
                 assert(false);
             }
-            if (!tree.root->check_color().first)
+            if (!tree.root_->check_color().first)
             {
                 std::cout << "error: color wrong\n";
                 assert(false);
             }
-            tree.root->print_middle();
         }
         else
         {
